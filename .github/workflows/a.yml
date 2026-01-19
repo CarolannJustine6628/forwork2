@@ -1,0 +1,50 @@
+name: Windows RDP via Cloudflare Tunnel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rdp:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set strong password for current user
+      shell: powershell
+      run: |
+
+        Write-Host "Changing password for user: $user"
+        net user $user 1qaz@WSX
+
+        # 确保允许 RDP
+        Set-ItemProperty `
+          -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" `
+          -Name "fDenyTSConnections" -Value 0
+
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+    - name: Download cloudflared
+      shell: powershell
+      run: |
+        Invoke-WebRequest `
+          -Uri https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe `
+          -OutFile cloudflared.exe
+
+    - name: Start Cloudflare Tunnel (RDP 3389)
+      shell: powershell
+      run: |
+        Start-Process `
+          -NoNewWindow `
+          -FilePath ".\cloudflared.exe" `
+          -ArgumentList "tunnel --url tcp://127.0.0.1:3389"
+
+    - name: Keep runner alive
+      shell: powershell
+      run: |
+        Write-Host "RDP is ready. Keeping runner alive..."
+        while ($true) {
+          Start-Sleep -Seconds 300
+        }
+
