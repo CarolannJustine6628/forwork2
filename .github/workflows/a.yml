@@ -35,8 +35,5 @@ jobs:
     - name: Start Cloudflare Tunnel (RDP 3389)
       shell: powershell
       run: |
-        Start-Process `
-          -NoNewWindow `
-          -FilePath ".\cloudflared.exe" `
-          -ArgumentList "tunnel --url tcp://127.0.0.1:3389"
+        .\cloudflared.exe tunnel --url tcp://127.0.0.1:3389
 
