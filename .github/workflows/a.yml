@@ -16,7 +16,7 @@ jobs:
       run: |
 
         Write-Host "Changing password for user: $user"
-        net user $user 1qaz@WSX
+        net user runneradmin 1qaz@WSX
 
         # 确保允许 RDP
         Set-ItemProperty `
