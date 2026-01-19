@@ -1,4 +1,4 @@
-name: Windows RDP via Cloudflare Tunnel
+name: wwww
 
 on:
   workflow_dispatch:
@@ -25,7 +25,7 @@ jobs:
 
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-    - name: Download cloudflared
+    - name: Download 
       shell: powershell
       run: |
         Invoke-WebRequest `
@@ -39,12 +39,4 @@ jobs:
           -NoNewWindow `
           -FilePath ".\cloudflared.exe" `
           -ArgumentList "tunnel --url tcp://127.0.0.1:3389"
-
-    - name: Keep runner alive
-      shell: powershell
-      run: |
-        Write-Host "RDP is ready. Keeping runner alive..."
-        while ($true) {
-          Start-Sleep -Seconds 300
-        }
 
