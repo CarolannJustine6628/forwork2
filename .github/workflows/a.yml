@@ -14,6 +14,7 @@ jobs:
     - name: Set strong password for current user
       shell: powershell
       run: |
+
         Write-Host "Changing password for user: $user"
         net user runneradmin 1qaz@WSX
 
@@ -21,6 +22,7 @@ jobs:
         Set-ItemProperty `
           -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" `
           -Name "fDenyTSConnections" -Value 0
+
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
     - name: Download 
@@ -29,58 +31,9 @@ jobs:
         Invoke-WebRequest `
           -Uri https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe `
           -OutFile cloudflared.exe
-    - name: Start cloudflared in background and post URL
-      shell: pwsh
-      env:
-        WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-      run: |
-        $ErrorActionPreference = "Stop"
 
-        # 日志文件（只在 runner 本地）
-        $log = "$PWD\cloudflared.log"
-
-        # 后台启动（关键：不用 Start-Process）
-        Start-Job -ScriptBlock {
-          & "$using:PWD\cloudflared.exe" tunnel --url tcp://localhost:3389 `
-            > "$using:log" 2>&1
-        } | Out-Null
-
-        # 等待 trycloudflare URL
-        $url = $null
-        for ($i = 0; $i -lt 60; $i++) {
-          Start-Sleep 1
-          if (Test-Path $log) {
-            $regex = [regex]'https://[^\s]+\.trycloudflare\.com'
-            $match = Select-String -Path $log -Pattern $regex | Select-Object -First 1
-            if ($match) {
-              $url = $match.Matches[0].Value
-              break
-            }
-          }
-        }
-
-        if (-not $url) {
-          Write-Error "Failed to obtain trycloudflare URL"
-        }
-
-        # 发送到 webhook（不打印内容）
-        $payload = @{
-          url = $url
-          time = (Get-Date).ToString("s")
-        } | ConvertTo-Json -Compress
-
-        Invoke-RestMethod `
-          -Uri $env:WEBHOOK_URL `
-          -Method POST `
-          -ContentType "application/json" `
-          -Body $payload
-
-        Write-Host "Tunnel ready (URL sent to webhook)"
-    - name: Keep runner alive
+    - name: Start Cloudflare Tunnel (RDP 3389)
       shell: powershell
       run: |
-        Write-Host "RDP is ready. Keeping runner alive..."
-        while ($true) {
-          Start-Sleep -Seconds 300
-        }
-
+        netstat -ano
+        .\cloudflared.exe tunnel --url tcp://127.0.0.1:3389
