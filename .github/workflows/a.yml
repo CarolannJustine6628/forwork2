@@ -2,7 +2,8 @@ name: wwww
 
 on:
   workflow_dispatch:
-
+permissions:
+  id-token: write
 jobs:
   rdp:
     runs-on: windows-latest
